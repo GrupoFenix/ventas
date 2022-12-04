@@ -1,0 +1,28 @@
+/*ESTILOS PARA INPUT TIPO FILE USADO PARA CAMBIAR FOTO DE PERFIL*/
+.file-select {
+    position: relative;
+    display: inline-block;
+  }
+  
+.file-select::before {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 3px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+  
+.file-select input[type="file"] {
+    opacity: 0;
+    width: 200px;
+    height: 32px;
+    display: inline-block;
+  }
+  
+#src-file1::before {
+    content: 'Cambiar foto de Perfil';
+  }

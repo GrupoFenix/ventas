@@ -1,0 +1,230 @@
+VISTA PARA TABLA CLIENTES "v_clientes"
+
+CREATE VIEW v_clientes AS
+SELECT clientes.idclientes, clientes.nombre, clientes.apellido, clientes.direccion, clientes.dni, clientes.email, clientes.telefono, clientes.login, clientes.pasword, clientes.idperfil, perfiles.perfil
+FROM clientes INNER JOIN perfiles ON clientes.idperfil=perfiles.idperfil
+
+VISTA PARA TABLA CLIENTES "v_boletas"
+
+CREATE VIEW v_boletas AS
+SELECT boletas.idboletas, boletas.numero, boletas.fecha, boletas.total, boletas.igv, boletas.idclientes, clientes.nombres
+FROM boletas INNER JOIN clientes ON boletas.idclientes=clientes.idclientes
+
+VISTA PARA TABLA PEDIDOS "v_pedidos"
+
+CREATE VIEW v_pedidos AS
+SELECT pedidos.idpedidos, pedidos.fechapedido, pedidos.fechaenvio, pedidos.idclientes, pedidos.idestadopedido, clientes.nombres, estadopedido.estadoped
+FROM pedidos INNER JOIN clientes ON pedidos.idclientes=clientes.idclientes
+INNER JOIN estadopedido ON pedidos.idestadopedido=estadopedido.idestadopedido
+
+VISTA PARA TABLA LIBROS "v_libros"
+
+CREATE VIEW v_libros AS
+SELECT libros.idlibros, libros.titulo, libros.descripcion, libros.precio_unitario, libros.añopublicacion, libros.stock, libros.idgeneros, generos.generos
+FROM libros INNER JOIN generos ON libros.idgeneros=generos.idgeneros
+
+VISTA PARA TABLA AUTORLIBRO "v_autorlibro"
+
+CREATE VIEW v_autorlibro AS
+SELECT autorlibro.idautores, autorlibro.idlibros, autores.fullnombres, libros.titulo
+FROM autorlibro INNER JOIN autores ON autorlibro.idautores=autores.idautores
+INNER JOIN libros ON autorlibro.idlibros=libros.idlibros
+
+VISTA PARA TABLA LIBROS "v_libros01"
+
+CREATE VIEW v_libros01 AS
+SELECT libros.idlibros, libros.titulo, libros.descripcion, libros.precio_unitario, libros.añopublicacion, libros.stock, libros.idgeneros, generos.generos, imagenes_producto.url
+FROM ((libros INNER JOIN generos ON libros.idgeneros=generos.idgeneros)
+      LEFT JOIN imagenes_producto ON libros.idlibros=imagenes_producto.idlibros)
+      GROUP BY libros.idlibros, libros.titulo, libros.descripcion,libros.precio_unitario, libros.añopublicacion, libros.añopublicacion, libros.stock, libros.idgeneros, generos.generos
+
+VISTA PARA GRAFICO graf_librosxgeneros
+
+CREATE VIEW graf_librosxgeneros AS
+
+SELECT generos.generos AS generos ,COUNT(libros.idlibros) AS cant FROM (bookstore.generos JOIN bookstore.libros ON (generos.idgeneros=libros.idgeneros)) GROUP BY generos.generos
+
+--FUNCIONES EN SQL PARA BOLETA SUPONGO---------------------------------------------------------------------
+
+--FUNCION AreaCuadrado
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` FUNCTION `AreaCuadrado`(`Lado` INT) RETURNS int(11)
+BEGIN
+  return Lado*Lado;
+END$$
+DELIMITER ;
+
+--FUNCION GetNroBoletaMax
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` FUNCTION `GetNroBoletaMax`() RETURNS int(11)
+    NO SQL
+BEGIN
+Declare Contador int DEFAULT 0;
+Select max(idboleta) into Contador from boletas;
+return Contador;
+END$$
+DELIMITER ;
+
+--FUNCION NuevoIdBoleta
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` FUNCTION `NuevoIdBoleta`() RETURNS int(11)
+BEGIN
+Declare Contador int DEFAULT 0;
+
+Select max(idboleta) into Contador from boletas;
+IF (Contador IS NULL) THEN
+	set Contador=0;
+end if;	
+return Contador+1;
+END$$
+DELIMITER ;
+
+--FUNCION NuevoNroBoleta
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` FUNCTION `NuevoNroBoleta`() RETURNS varchar(10) CHARSET latin1
+BEGIN
+Declare Contador int DEFAULT 0;
+
+Select max(right(nro,8)) into Contador from boletas;
+IF (Contador IS NULL) THEN
+	set Contador=0;
+end if;	
+return concat('B-',right(concat('00000000',Contador+1),8)) ;
+END$$
+DELIMITER ;
+
+
+
+
+
+
+
+
+TRIGGER
+
+CREATE TRIGGER NuevaBoleta BEFORE INSERT INTO boletas
+FOR EACH ROW BEGIN
+	SET new.idboletas=NuevoIdBoleta();
+	SET new.numero=NuevoNroBoleta();
+	SET new.fecha=now();
+END
+
+
+
+
+
+
+
+
+
+CREATE VIEW v_productos01 AS
+SELECT productos.idproductos, productos.nombre, productos.descripcion, productos.precio, productos.stock, imagenes_producto.url
+FROM productos LEFT JOIN imagenes_producto on productos.idproductos=imagenes_producto.idproductos
+GROUP BY productos.idproductos, productos.nombre, productos.descripcion, productos.precio, productos.stock
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ /*$sql_generos=$resultado->query("SELECT * FROM generos");
+    return $this->_bd->ejecutar($sql_generos);
+
+    if (isset($_GET["id"])) {
+        $id=$_GET["id"];
+        $sql_libros=$resultado->query("SELECT * FROM generos WHERE idgeneros=$id");
+    return $this->_bd->ejecutar($sql_libros);
+    }
+
+?>
+    <ul> <?php
+    while ($fila=$sql_generos->fetch_array()) {
+        $id=$fila[0];
+        $generos=$fila[1];?>
+        <li><a href=""></a></li>
+    <?php }?>
+    </ul>
+<?php*/
+
+//////vista para boletas////////
+
+CREATE VIEW v_boletas AS
+SELECT boletas.idboletas AS idboletas,boletas.numero AS numero,boletas.fecha AS fecha,boletas.total AS total,NumerosALetras(boletas.total) AS enLetras,boletas.idclientes AS idclientes,detalles_boletas.cantidad AS cantidad,detalles_boletas.precio_unitario AS precio_unitario,detalles_boletas.subtotal AS subtotal,detalles_boletas.idlibros AS idlibros,libros.titulo AS nombreprod,libros.descripcion AS descripcion,libros.idgeneros AS idgeneros,generos.generos AS generos,clientes.nombre AS nombrecli,clientes.apellido AS apellidocli,clientes.direccion AS direccion,clientes.email AS email,clientes.dni AS dni FROM (((((((bookstore.boletas JOIN bookstore.detalles_boletas ON(boletas.idboletas = detalles_boletas.idboletas)) JOIN bookstore.libros ON(detalles_boletas.idlibros = libros.idlibros)) JOIN bookstore.generos ON(libros.idgeneros = generos.idgeneros)) JOIN bookstore.clientes ON(boletas.idclientes = clientes.idclientes))
+
+/////clientes//////
+CREATE VIEW v_clientes AS
+select clientes.idclientes AS idcliente, clientes.nombre AS nombre, clientes.apellido AS apellidos ,concat(clientes.nombre,' ', clientes.apellido) AS nombrecliente, clientes.dni AS dni, clientes.direccion AS direccion from clientes
+
+
+CREATE VIEW v_boletas AS
+SELECT boletas.idboletas AS idboletas,boletas.numero AS numero,boletas.fecha AS fecha,boletas.total AS total,NumerosALetras(boletas.total) AS enLetras,boletas.idclientes AS idclientes,
+detalles_boletas.cantidad AS cantidad,detalles_boletas.precio_unitario AS precio_unitario,detalles_boletas.subtotal AS subtotal,detalles_boletas.idlibros AS idlibros,
+libros.titulo AS nombreprod,libros.descripcion AS descripcion,libros.idgeneros AS idgeneros,
+generos.generos AS generos,
+clientes.nombre AS nombrecli,clientes.apellido AS apellidocli,clientes.direccion AS direccion,clientes.email AS email,clientes.dni AS dni 
+FROM bookstore.boletas INNER JOIN bookstore.detalles_boletas ON boletas.idboletas = detalles_boletas.idboletas INNER JOIN bookstore.libros ON detalles_boletas.idlibros = libros.idlibros INNER JOIN bookstore.generos ON libros.idgeneros = generos.idgeneros INNER JOIN bookstore.clientes ON boletas.idclientes = clientes.idclientes
+
+///////ventasXGeneroFecha///// en un periodo de tiempo
+
+DELIMITER //
+CREATE PROCEDURE ventasXGeneroFecha(in anio int, in mes int, in dia int)
+BEGIN 
+
+SELECT generos.generos, AVG(detalles_boletas.precio_unitario) AS promedio
+FROM generos INNER JOIN libros ON generos.idgeneros=libros.idgeneros
+INNER JOIN detalles_boletas ON detalles_boletas.idlibros=libros.idlibros
+INNER JOIN boletas ON boletas.idboletas=detalles_boletas.idboletas
+WHERE year(boletas.fecha)=anio and month(boletas.fecha)=mes AND day(boletas.fecha)=dia
+GROUP BY generos.generos;
+
+END //
+DELIMITER ;
+
+
+
+//////nueva vista para clientes////7
+
+CREATE VIEW v_clientes AS
+SELECT clientes.idclientes, clientes.nombre, clientes.apellido, clientes.direccion, clientes.dni, clientes.email, clientes.telefono, clientes.login, clientes.pasword, clientes.idperfil, perfiles.perfil, clientes.url
+FROM clientes INNER JOIN perfiles ON clientes.idperfil=perfiles.idperfil
+GROUP BY clientes.idclientes, clientes.nombre, clientes.apellido, clientes.direccion, clientes.dni, clientes.email, clientes.telefono, clientes.login, clientes.pasword, clientes.idperfil, perfiles.perfil
+
+/////vista grafico para stocklibros//////
+CREATE VIEW stocklibros AS
+SELECT libros.titulo AS fila, libros.stock AS columna FROM libros WHERE libros.stock<30
+/////////
+
+
+/////PROCEDURE getvisitantes ////7
+
+DELIMITER //
+CREATE PROCEDURE getVisitantes(semana int)
+BEGIN
+SELECT COUNT(ip) as contador FROM visitantes
+WHERE WEEK(fecha)=semana;
+END //
+DELIMITER ;
+
+
+////
+CREATE VIEW v_cantclientes AS
+SELECT COUNT(idclientes) as cantidad FROM clientes WHERE idperfil=2
+
+
+
+/////////
+CREATE VIEW totalrecaudado AS
+SELECT SUM(boletas.total) AS totalrecaudado FROM boletas
+/////////
